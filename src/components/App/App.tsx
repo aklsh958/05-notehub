@@ -17,9 +17,10 @@ export default function App() {
   const [debouncedSearch] = useDebounce(search, 500);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [search]);
 
   const { data, isLoading, isError, isSuccess } = useQuery({
     queryKey: ['notes', page, debouncedSearch],
@@ -27,19 +28,25 @@ export default function App() {
     placeholderData: keepPreviousData,
   });
 
+  
+  const totalPages = data ? Math.ceil(data.total / 12) : 0;
+
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox value={search} onChange={setSearch} />
+        <SearchBox onChange={setSearch} />
+
         {isLoading && <Loader />}
         {isError && <ErrorMessage />}
-        {data && data.total > 1 && (
+
+        {data && totalPages > 1 && (
           <Pagination
             currentPage={page}
-            totalPages={data.total}
+            totalPages={totalPages}
             onPageChange={setPage}
           />
         )}
+
         <button
           type="button"
           className={css.button}
@@ -54,6 +61,7 @@ export default function App() {
       ) : (
         <p>No notes found</p>
       )}
+
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
           <NoteForm onClose={() => setIsModalOpen(false)} />
