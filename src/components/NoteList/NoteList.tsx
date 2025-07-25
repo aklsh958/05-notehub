@@ -31,7 +31,7 @@ export default function NoteList({ notes }: NoteListProps) {
             <span className={css.tag}>{note.tag}</span>
             <button
               className={css.button}
-              onClick={() => handleDelete(note.id)}
+              onClick={() => handleDelete(note.id.toString())}
             >
               Delete
             </button>

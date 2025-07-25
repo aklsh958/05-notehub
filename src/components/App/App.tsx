@@ -34,11 +34,9 @@ export default function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox onChange={setSearch} />
-
+        <SearchBox value={search} onChange={setSearch} />
         {isLoading && <Loader />}
         {isError && <ErrorMessage />}
-
         {data && totalPages > 1 && (
           <Pagination
             currentPage={page}
