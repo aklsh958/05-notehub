@@ -1,69 +1,68 @@
-import { useState } from "react";
-import Pagination from "../Pagination/Pagination";
-import SearchBox from "../SearchBox/SearchBox";
-import css from "./App.module.css";
-import { useDebouncedCallback } from "use-debounce";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { fetchNotes } from "../../services/noteService";
-import NoteList from "../NoteList/NoteList";
-import Modal from "../Modal/Modal";
-import NoteForm from "../NoteForm/NoteForm";
+import { useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { fetchNotes } from '../../services/noteService';
+import { useDebouncedCallback } from 'use-debounce';
+import NoteList from '../NoteList/NoteList';
+import Paginaition from '../Pagination/Pagination';
+import SearchBox from '../SearchBox/SearchBox';
+import Modal from '../Modal/Modal';
+import NoteForm from '../NoteForm/NoteForm';
+import Loader from '../Loader/Loader';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import css from '../App/App.module.css';
 
 export default function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [modalIsOpen, setModalIsOpen] = useState(false);
 
-  const [inputValue, setInputValue] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const handleSearch = useDebouncedCallback((search: string) => { setDebouncedSearch(search) }, 300);
 
-  const updateSearchQuery = useDebouncedCallback((value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  }, 300);
-
-  const handleSearchChange = (value: string) => {
-    setInputValue(value);
-    updateSearchQuery(value);
+  const handleSearchCange = (search: string) => {
+    setSearch(search);
+    setPage(1);
+    handleSearch(search);
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["notes", currentPage, searchQuery],
-    queryFn: () => fetchNotes({ page: currentPage, search: searchQuery }),
-    placeholderData: keepPreviousData,
-  });
-
  
-  const totalPages = data ? Math.ceil(data.total / 12) : 0;
+ const { data, isLoading, isError, isSuccess } = useQuery({
+    queryKey: ['notes', page, debouncedSearch],
+    queryFn: () => fetchNotes({
+      page,
+      perPage: 12,
+      search: debouncedSearch,
+    }),
+    placeholderData: keepPreviousData
+  }
+  );
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox value={inputValue} onChange={handleSearchChange} />
-        {totalPages > 1 && (
-          <Pagination
-            totalNumberOfPages={totalPages}
-            currentActivePage={currentPage}
-            setPage={setCurrentPage}
+        <SearchBox value={search} onChange={handleSearchCange} />
+       {data && data.total_pages > 1 && (
+          <Paginaition
+            currentPage={page}
+            totalPages={data.total_pages}
+            onPageChange={setPage}
           />
         )}
-        <button className={css.button} onClick={openModal}>
-          Create note +
-        </button>
+        <button className={css.button} type='button' onClick={() => setModalIsOpen(true)}>Create +</button>
       </header>
-
-      {isLoading ? (
-        <p className={css.loading}>Loading notes...</p>
-      ) : (
-        <NoteList notes={data?.data ?? []} />
-      )}
-
-      {isModalOpen && (
-        <Modal onClose={closeModal}>
-          <NoteForm onClose={closeModal} />
+       {isLoading && <Loader />}
+       {isError && <ErrorMessage />}
+      {isSuccess && data?.data?.length > 0 ? (
+        <NoteList notes={data.data} />)
+        : (
+          <p>No notes found</p>
+        )
+      }
+      {modalIsOpen && (
+        <Modal onClose={() => setModalIsOpen(false)}>
+          <NoteForm onClose={() => setModalIsOpen(false)} />
         </Modal>
       )}
     </div>
   );
-}
+};
