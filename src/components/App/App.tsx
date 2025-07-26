@@ -34,7 +34,7 @@ export default function App() {
     placeholderData: keepPreviousData,
   });
 
-  // обчислення кількості сторінок
+ 
   const totalPages = data ? Math.ceil(data.total / 12) : 0;
 
   return (
